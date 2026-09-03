@@ -45,6 +45,8 @@ async function callDirectGemini(action, data) {
     prompt = `Crie 3 opções de mensagens carinhosas de WhatsApp do guardião para a paciente (progresso: ${data.streak} dias). Retorne JSON {"opcoes": [{"titulo": "...", "mensagem": "...", "icone": "trofeu"}]}. Responda APENAS JSON.`
   } else if (action === "weekly_summary") {
     prompt = `Crie um resumo semanal empático do guardião. Retorne JSON com {"destaque_positivo": "...", "atencao_amorosa": "...", "dica_para_guardiao": "..."}. Responda APENAS JSON.`
+  } else if (action === "daily_mission") {
+    prompt = `Gere uma micro-missão diária gentil, realizável e motivadora (máximo 15 palavras) para uma paciente em tratamento de emagrecimento saudável (humor: ${data.humor || 'bem'}, sequência: ${data.streak || 0} dias). Retorne APENAS um JSON: {"missao": "texto da missão", "dica": "uma linha de carinho"}. Responda APENAS JSON.`
   }
 
   const models = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite']
@@ -136,6 +138,19 @@ function getLocalFallback(action, _data) {
       atencao_amorosa: 'Fique atento aos momentos de cansaço no fim da tarde ou após dias intensos; uma palavra de incentivo faz toda a diferença nesses momentos.',
       dica_para_guardiao: 'Mande uma mensagem surpresa reforçando quanto você admira o esforço dela, independentemente do número na balança.'
     }
+  }
+
+  if (action === 'daily_mission') {
+    const missoes = [
+      { missao: 'Beba 1 copo grande de água antes da próxima refeição.', dica: 'Ajuda na digestão e na saciedade natural.' },
+      { missao: 'Caminhe por 10 minutos hoje no seu próprio ritmo.', dica: 'Movimento leve que acalma a mente e o corpo.' },
+      { missao: 'Coma a porção de proteína e salada antes do carboidrato.', dica: 'Controla a glicemia e prolonga sua saciedade.' },
+      { missao: 'Tire 3 minutos para respirar fundo e soltar a tensão dos ombros.', dica: 'Pausa consciente reduz a fome emocional.' },
+      { missao: 'Troque um refrigerante por água com gotas de limão fresco.', dica: 'Hidratação saborosa sem sobrecarregar o organismo.' },
+      { missao: 'Mastigue com calma e pouse os talheres entre as garfadas.', dica: 'Dá tempo ao cérebro para registrar a saciedade.' },
+      { missao: 'Desligue as telas 20 minutos antes de se deitar esta noite.', dica: 'Um sono reparador regula os hormônios da fome.' }
+    ]
+    return missoes[Math.floor(Math.random() * missoes.length)]
   }
 
   return {}

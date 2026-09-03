@@ -1,12 +1,10 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 }
 
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders })
   }
@@ -89,8 +87,26 @@ Retorne um JSON com:
   "destaque_positivo": "Um resumo de 2 linhas destacando a constância e vitórias dela",
   "atencao_amorosa": "Um ponto onde ela pode precisar de mais suporte ou incentivo carinhoso",
   "dica_para_guardiao": "Uma ação prática para o Guardião fazer hoje por ela"
-}
-Responda APENAS com o JSON válido.`
+}`
+    } else if (action === "daily_mission") {
+      const { streak = 0, humor = "bem", alimentacao = false, agua = 0 } = data
+      prompt = `Você é a IA acolhedora e motivadora do app 'Lado a Lado'.
+Gere UMA micro-missão diária prática, realista e acolhedora para hoje, para apoiar a paciente em seu processo de emagrecimento com carinho e sem pressão.
+Contexto:
+- Dias de ofensiva/constância: ${streak}
+- Humor hoje: ${humor}
+- Água bebida hoje: ${agua} copos
+
+Critérios:
+- A missão deve ser um micro-hábito simples de cumprir hoje (ex: hidratação saborizada, caminhada leve de 10 min, comer proteína antes dos carboidratos, momento de respiração, pausa consciente, etc.).
+- Frase curta e direta (máximo 16 palavras).
+- Tom sempre carinhoso e sem cobranças punitivas.
+
+Retorne APENAS um JSON no formato:
+{
+  "missao": "Frase da missão aqui",
+  "dica": "Explicação acolhedora em 1 linha"
+}`
     } else {
       return new Response(
         JSON.stringify({ error: "Ação não suportada" }),

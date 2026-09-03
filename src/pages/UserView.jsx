@@ -167,7 +167,12 @@ export default function UserView({ onGuardiao }) {
 
       <ProteinFiberChecklist />
 
-      <DailyMission />
+      <DailyMission
+        streak={streak}
+        humor={checkin?.humor}
+        agua={coposAgua}
+        alimentacao={alimentacao}
+      />
 
       <section className="space-y-2.5">
         <div

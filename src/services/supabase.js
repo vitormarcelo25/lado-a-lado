@@ -476,22 +476,41 @@ export async function getTodayMission() {
     .maybeSingle()
 
   if (error && error.code !== 'PGRST116') throw error
+  return data
+}
 
-  if (!data) {
-    const missao = getMissionForDate(today())
-    const { data: newData, error: insertError } = await supabase
+export async function upsertTodayMission(missao, concluida = false) {
+  const { data: existing } = await supabase
+    .from('daily_missions')
+    .select('id, concluida')
+    .eq('data', today())
+    .maybeSingle()
+
+  if (existing) {
+    const { data, error } = await supabase
       .from('daily_missions')
-      .insert({ data: today(), missao, concluida: false })
+      .update({ missao, concluida: existing.concluida ?? concluida })
+      .eq('id', existing.id)
       .select()
       .single()
-    if (insertError) throw insertError
-    return newData
+    if (error) throw error
+    return data
   }
 
+  const { data, error } = await supabase
+    .from('daily_missions')
+    .insert({ data: today(), missao, concluida })
+    .select()
+    .single()
+  if (error) throw error
   return data
 }
 
 export async function toggleMission(missionId, concluida) {
+  if (!missionId || String(missionId).startsWith('local_')) {
+    return { id: missionId, concluida }
+  }
+
   const { data, error } = await supabase
     .from('daily_missions')
     .update({ concluida })
