@@ -1,5 +1,5 @@
-const CACHE_NAME = 'lado-a-lado-v2'
-const URLS_TO_CACHE = ['/', '/index.html', '/icon-192.png', '/icon-512.png']
+const CACHE_NAME = 'lado-a-lado-v3'
+const URLS_TO_CACHE = ['/icon-192.png', '/icon-512.png', '/favicon.png']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -18,6 +18,15 @@ self.addEventListener('activate', (event) => {
 })
 
 self.addEventListener('fetch', (event) => {
+  // Para navegações (HTML principal), rede primeiro para sempre receber o build mais recente
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('/index.html') || caches.match('/'))
+    )
+    return
+  }
+
+  // Para assets estáticos em cache (ícones, etc.)
   event.respondWith(
     caches.match(event.request).then((cached) => cached || fetch(event.request))
   )

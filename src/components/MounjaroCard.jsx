@@ -9,24 +9,28 @@ export default function MounjaroCard() {
   const [localSelecionado, setLocalSelecionado] = useState('Abdomen');
   const [salvando, setSalvando] = useState(false);
 
+  const carregarUltimaDose = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('mounjaro_applications')
+        .select('*')
+        .order('data_aplicacao', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Erro ao carregar:', error);
+        return;
+      }
+      if (data) setUltimaDose(data);
+    } catch (err) {
+      console.error('Erro ao buscar dose de Mounjaro:', err);
+    }
+  };
+
   useEffect(() => {
     carregarUltimaDose();
   }, []);
-
-  const carregarUltimaDose = async () => {
-    const { data, error } = await supabase
-      .from('mounjaro_applications')
-      .select('*')
-      .order('data_aplicacao', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('Erro ao carregar:', error);
-      return;
-    }
-    if (data) setUltimaDose(data);
-  };
 
   const registrarAplicacao = async (e) => {
     e.preventDefault();

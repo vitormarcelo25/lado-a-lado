@@ -1,9 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://dcypggnesbkrlgykcdsq.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_KH_Zya-o3IKmoQSlX3V9Bg_jeoUgpHc'
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(
+  supabaseUrl || 'https://dcypggnesbkrlgykcdsq.supabase.co',
+  supabaseAnonKey || 'sb_publishable_KH_Zya-o3IKmoQSlX3V9Bg_jeoUgpHc'
+)
 
 const today = () => new Date().toISOString().slice(0, 10)
 
