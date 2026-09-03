@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   Droplets, Sparkles, Shield, HelpCircle, Bell,
-  MessageCircleHeart, CheckCircle2, Target,
+  MessageCircleHeart, CheckCircle2, Target, LineChart,
   Plus, Minus, Smile, Meh, Frown, PartyPopper
 } from 'lucide-react'
 import { useCheckins } from '../hooks/useCheckins'
@@ -21,6 +21,7 @@ import HungerThermometer from '../components/HungerThermometer'
 import ProteinFiberChecklist from '../components/ProteinFiberChecklist'
 import NonScaleVictories from '../components/NonScaleVictories'
 import DailyMission from '../components/DailyMission'
+import HistoryDashboardModal from '../components/HistoryDashboardModal'
 
 const META_COPAS = 10
 
@@ -35,12 +36,13 @@ export default function UserView({ onGuardiao }) {
   const { checkin, loading, toggle, setValue, setHumor } = useCheckins()
   const { streak } = useStreak()
   const { quote, isAiGenerated } = useQuotes({ streak, humor: checkin?.humor })
-  const { latest, addLog } = useWeightLogs()
+  const { logs, latest, addLog } = useWeightLogs()
   const { suportado, permissao, solicitarPermissao, agendarVerificacoes } = useNotifications()
 
   const [weightOpen, setWeightOpen] = useState(false)
   const [sosOpen, setSosOpen] = useState(false)
   const [guiaAberto, setGuiaAberto] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   useEffect(() => {
     if (permissao === 'granted') {
@@ -106,6 +108,13 @@ export default function UserView({ onGuardiao }) {
           >
             <Target className="w-3.5 h-3.5 text-rose-500" />
             <span>Metas</span>
+          </button>
+          <button
+            onClick={() => setHistoryOpen(true)}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            title="Historico e Relatorios"
+          >
+            <LineChart className="w-4 h-4" />
           </button>
           <button
             onClick={onGuardiao}
@@ -246,6 +255,8 @@ export default function UserView({ onGuardiao }) {
       <SosModal isOpen={sosOpen} onClose={() => setSosOpen(false)} />
 
       <GuiaModal aberto={guiaAberto} fechar={() => setGuiaAberto(false)} />
+
+      <HistoryDashboardModal isOpen={historyOpen} onClose={() => setHistoryOpen(false)} weightLogs={logs} />
     </div>
   )
 }
