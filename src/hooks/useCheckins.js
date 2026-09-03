@@ -33,6 +33,17 @@ export function useCheckins() {
     }
   }, [checkin])
 
+  const setValue = useCallback(async (field, value) => {
+    setCheckin(prev => ({ ...prev, [field]: value }))
+
+    try {
+      const updated = await upsertTodayCheckin({ [field]: value })
+      setCheckin(updated)
+    } catch (err) {
+      console.error('Erro ao atualizar check-in:', err)
+    }
+  }, [])
+
   const setHumor = useCallback(async (humor) => {
     setCheckin(prev => ({ ...prev, humor }))
 
@@ -44,5 +55,5 @@ export function useCheckins() {
     }
   }, [])
 
-  return { checkin, loading, toggle, setHumor, refetch: fetchCheckin }
+  return { checkin, loading, toggle, setValue, setHumor, refetch: fetchCheckin }
 }

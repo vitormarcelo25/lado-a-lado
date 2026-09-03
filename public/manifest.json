@@ -1,0 +1,22 @@
+{
+  "name": "Lado a Lado",
+  "short_name": "Lado a Lado",
+  "description": "Parceria no tratamento de emagrecimento",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#f43f5e",
+  "gcm_sender_id": "900690220422",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
