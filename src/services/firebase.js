@@ -61,10 +61,16 @@ export function escutarMensagensEmTempoReal(callback) {
     const body = payload.notification?.body || ''
 
     if (Notification.permission === 'granted') {
-      new Notification(title, {
-        body,
-        icon: '/icon-192.png',
-      })
+      const options = { body, icon: '/icon-192.png' }
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready
+          .then((reg) => reg.showNotification(title, options))
+          .catch(() => {
+            try { new Notification(title, options) } catch(e) {}
+          })
+      } else {
+        try { new Notification(title, options) } catch(e) {}
+      }
     }
 
     if (callback) callback(payload)

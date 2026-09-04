@@ -35,6 +35,26 @@ function marcarDisparou(id) {
   } catch { /* ignore */ }
 }
 
+async function mostrarNotificacao(title, options) {
+  if (Notification.permission !== 'granted') return
+  if ('serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.ready
+      if (reg) {
+        await reg.showNotification(title, options)
+        return
+      }
+    } catch (e) {
+      console.error('Erro SW notif:', e)
+    }
+  }
+  try {
+    new Notification(title, options)
+  } catch (e) {
+    console.error('Erro fallback notif:', e)
+  }
+}
+
 export function useNotifications() {
   const [suportado, setSuportado] = useState(false)
   const [permissao, setPermissao] = useState('default')
@@ -75,7 +95,7 @@ export function useNotifications() {
         const body = payload.notification?.body || ''
 
         if (Notification.permission === 'granted') {
-          new Notification(title, {
+          mostrarNotificacao(title, {
             body,
             icon: '/icon-192.png',
           })
@@ -91,7 +111,7 @@ export function useNotifications() {
     setPermissao(resultado)
 
     if (resultado === 'granted') {
-      new Notification('Lado a Lado', {
+      mostrarNotificacao('Lado a Lado', {
         body: 'Lembretes ativados! Estaremos juntos no seu processo.',
         icon: '/icon-192.png',
         tag: 'boas-vindas',
@@ -114,7 +134,7 @@ export function useNotifications() {
         .maybeSingle()
 
       if (!data) {
-        new Notification('Seu cantinho do dia', {
+        mostrarNotificacao('Seu cantinho do dia', {
           body: 'Hora do seu check-in de 1 minuto antes de descansar. Como foram as coisas hoje?',
           icon: '/icon-192.png',
           tag: 'lembrete-noturno',
@@ -140,7 +160,7 @@ export function useNotifications() {
         const dias = Math.floor((hoje - ultima) / (1000 * 60 * 60 * 24))
 
         if (dias >= 7) {
-          new Notification('Ciclo do Mounjaro', {
+          mostrarNotificacao('Ciclo do Mounjaro', {
             body: 'Ja se passaram 7 dias desde a ultima dose. Lembre-se de registrar quando aplicar!',
             icon: '/icon-192.png',
             tag: 'alerta-mounjaro',
@@ -153,7 +173,7 @@ export function useNotifications() {
   const verificarIncentivoAgua = useCallback(() => {
     if (permissao !== 'granted') return
 
-    new Notification('Hora de beber agua', {
+    mostrarNotificacao('Hora de beber agua', {
       body: 'Que tal tomar um copo de agua agora? Hidratacao e essencial!',
       icon: '/icon-192.png',
       tag: 'incentivo-agua',
@@ -188,7 +208,7 @@ export function useNotifications() {
       const fireKey = `${notif.id}-${hojeStr}`
       if (jaDisparou(fireKey)) continue
 
-      new Notification(notif.titulo, {
+      mostrarNotificacao(notif.titulo, {
         body: notif.mensagem,
         icon: '/icon-192.png',
         tag: `guardian-${notif.id}`,
@@ -214,7 +234,7 @@ export function useNotifications() {
         if (horarioAlvo === agora) {
           const fireKey = `${notif.id}-${new Date().toISOString().slice(0, 10)}`
           if (!jaDisparou(fireKey)) {
-            new Notification(notif.titulo, {
+            mostrarNotificacao(notif.titulo, {
               body: notif.mensagem,
               icon: '/icon-192.png',
               tag: `guardian-${notif.id}`,
