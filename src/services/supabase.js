@@ -83,52 +83,79 @@ export async function getRecentCheckins(days = 90) {
 // ============================================================
 
 export async function addWeightLog(peso, cintura, nota) {
+  const currentMetas = await getMetas()
+  if (currentMetas) {
+    await upsertMetas({ 
+      ...currentMetas, 
+      peso_atual: peso,
+      ...(cintura ? { cintura: parseFloat(cintura) } : {})
+    })
+  }
+
   const { data: existing } = await supabase
     .from('weight_logs')
     .select('id')
-    .eq('data', today())
+    .eq('date', today())
     .maybeSingle()
 
   if (existing) {
     const { data, error } = await supabase
       .from('weight_logs')
-      .update({ peso, cintura: cintura || null, nota: nota || null })
+      .update({ 
+        weight: parseFloat(peso), 
+        notes: nota || null 
+      })
       .eq('id', existing.id)
       .select()
       .single()
     if (error) throw error
-    return data
+    return { ...data, peso: data.weight, data: data.date, nota: data.notes }
   }
 
   const { data, error } = await supabase
     .from('weight_logs')
-    .insert({ data: today(), peso, cintura: cintura || null, nota: nota || null })
+    .insert({ 
+      date: today(), 
+      weight: parseFloat(peso), 
+      notes: nota || null 
+    })
     .select()
     .single()
   if (error) throw error
-  return data
+  return { ...data, peso: data.weight, data: data.date, nota: data.notes }
 }
 
 export async function getWeightLogs() {
   const { data, error } = await supabase
     .from('weight_logs')
     .select('*')
-    .order('data', { ascending: true })
+    .order('date', { ascending: true })
 
   if (error) throw error
-  return data
+  return (data || []).map(d => ({
+    ...d,
+    peso: d.weight,
+    data: d.date,
+    nota: d.notes
+  }))
 }
 
 export async function getLatestWeight() {
   const { data, error } = await supabase
     .from('weight_logs')
-    .select('peso, data')
-    .order('data', { ascending: false })
+    .select('*')
+    .order('date', { ascending: false })
     .limit(1)
     .maybeSingle()
 
   if (error) throw error
-  return data
+  if (!data) return null
+  return {
+    ...data,
+    peso: data.weight,
+    data: data.date,
+    nota: data.notes
+  }
 }
 
 export async function getMetas() {

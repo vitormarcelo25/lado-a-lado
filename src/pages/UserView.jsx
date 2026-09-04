@@ -107,7 +107,7 @@ export default function UserView({ onGuardiao }) {
             className="flex items-center gap-1.5 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-full text-xs font-bold text-rose-700 hover:bg-rose-100 transition-colors"
           >
             <Target className="w-3.5 h-3.5 text-rose-500" />
-            <span>Metas</span>
+            <span>Registrar Peso</span>
           </button>
           <button
             onClick={() => setHistoryOpen(true)}

@@ -250,49 +250,20 @@ export function useNotifications() {
     if (agendado) return
     setAgendado(true)
 
-    const agora = new Date()
-
-    const alvo21 = new Date()
-    alvo21.setHours(21, 0, 0, 0)
-    if (alvo21 <= agora) alvo21.setDate(alvo21.getDate() + 1)
-    setTimeout(() => {
-      verificarLembreteNoturno()
-      setInterval(verificarLembreteNoturno, 24 * 60 * 60 * 1000)
-    }, alvo21 - agora)
-
-    const alvo12 = new Date()
-    alvo12.setHours(12, 0, 0, 0)
-    if (alvo12 <= agora) alvo12.setDate(alvo12.getDate() + 1)
-    setTimeout(() => {
-      verificarAlertaMounjaro()
-      setInterval(verificarAlertaMounjaro, 24 * 60 * 60 * 1000)
-    }, alvo12 - agora)
-
-    const alvo15 = new Date()
-    alvo15.setHours(15, 0, 0, 0)
-    if (alvo15 <= agora) alvo15.setDate(alvo15.getDate() + 1)
-    setTimeout(() => {
-      verificarIncentivoAgua()
-      setInterval(verificarIncentivoAgua, 24 * 60 * 60 * 1000)
-    }, alvo15 - agora)
-
-    // Realtime (instantaneo quando online)
-    iniciarRealtimeGuardiao()
-
     // FCM: registrar token e escutar foreground messages
     if (permissao === 'granted') {
       registrarTokenFCM()
       iniciarListenerFCM()
     }
 
-    // Checagem a cada 30s: tenta sincronizar, senao usa cache
-    const checar = async () => {
-      const notifs = await sincronizarNotificacoes()
-      dispararNotificacoesGuardiao(notifs)
-    }
-    checar()
-    setInterval(checar, 30 * 1000)
-  }, [agendado, verificarLembreteNoturno, verificarAlertaMounjaro, verificarIncentivoAgua, iniciarRealtimeGuardiao, sincronizarNotificacoes, dispararNotificacoesGuardiao, permissao, registrarTokenFCM, iniciarListenerFCM])
+    // Realtime (instantaneo quando online)
+    iniciarRealtimeGuardiao()
+
+    // Lembretes noturnos, de agua, e de Mounjaro
+    // Agora sao processados 100% pelo Backend via pg_cron + Edge Functions
+    // Nao precisamos mais de setTimeouts aqui que so disparam ao abrir o app.
+
+  }, [agendado, iniciarRealtimeGuardiao, permissao, registrarTokenFCM, iniciarListenerFCM])
 
   return {
     suportado,

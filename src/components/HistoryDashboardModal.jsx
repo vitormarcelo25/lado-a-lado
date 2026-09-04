@@ -1,44 +1,54 @@
 import { useState, useEffect } from 'react'
-import { X, LineChart, Activity, Sparkles, RefreshCw, Loader2 } from 'lucide-react'
+import { X, LineChart, Activity, Sparkles, RefreshCw, Loader2, Settings, Calendar, Clock, Scale } from 'lucide-react'
 import WeightChart from './WeightChart'
-import { getMetas, getAllCheckinsForDate, getCurrentWeekVictories } from '../services/supabase'
+import GoalsModal from './GoalsModal'
+import { getMetas, getAllCheckinsForDate, getCurrentWeekVictories, getWeightLogs } from '../services/supabase'
 import { callGemini } from '../services/gemini'
 
-export default function HistoryDashboardModal({ isOpen, onClose, weightLogs }) {
+export default function HistoryDashboardModal({ isOpen, onClose, weightLogs: initialLogs }) {
   const [metas, setMetas] = useState(null)
   const [hojeDados, setHojeDados] = useState(null)
   const [victories, setVictories] = useState(null)
+  const [logs, setLogs] = useState(initialLogs || [])
   
   const [weeklySummary, setWeeklySummary] = useState(null)
   const [loadingWeeklySummary, setLoadingWeeklySummary] = useState(false)
+  const [isGoalsOpen, setIsGoalsOpen] = useState(false)
+
+  const fetchDadosDashboard = async () => {
+    const hoje = new Date().toISOString().slice(0, 10)
+    try {
+      const [dMetas, dCheckin, dVictories, dLogs] = await Promise.all([
+        getMetas(),
+        getAllCheckinsForDate(hoje),
+        getCurrentWeekVictories(),
+        getWeightLogs()
+      ])
+      setMetas(dMetas)
+      setHojeDados(dCheckin)
+      setVictories(dVictories)
+      if (dLogs) setLogs(dLogs)
+    } catch (err) {
+      console.error('Erro ao buscar dados do dashboard:', err)
+    }
+  }
 
   useEffect(() => {
     if (!isOpen) return
-
-    async function fetchData() {
-      const hoje = new Date().toISOString().slice(0, 10)
-      try {
-        const [dMetas, dCheckin, dVictories] = await Promise.all([
-          getMetas(),
-          getAllCheckinsForDate(hoje),
-          getCurrentWeekVictories()
-        ])
-        setMetas(dMetas)
-        setHojeDados(dCheckin)
-        setVictories(dVictories)
-      } catch (err) {
-        console.error('Erro ao buscar dados do dashboard:', err)
-      }
-    }
-    
-    fetchData()
+    fetchDadosDashboard()
   }, [isOpen])
+
+  useEffect(() => {
+    if (initialLogs && initialLogs.length > 0) {
+      setLogs(initialLogs)
+    }
+  }, [initialLogs])
 
   const gerarResumoSemanalIA = async () => {
     setLoadingWeeklySummary(true)
     try {
       const res = await callGemini('weekly_summary', {
-        streak: weightLogs?.length || 1,
+        streak: logs?.length || 1,
         checkinsCount: hojeDados ? 1 : 0,
         pesoInicial: metas?.peso_inicial || 0,
         pesoAtual: metas?.peso_atual || 0,
@@ -75,38 +85,45 @@ export default function HistoryDashboardModal({ isOpen, onClose, weightLogs }) {
 
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Evolucao do Tratamento */}
-          {metas && (
-            <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm space-y-3">
+          <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm space-y-3 relative">
+            <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Activity className="w-4 h-4 text-emerald-500" />
-                Evolucao do Tratamento
+                Evolução do Tratamento
               </span>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="p-3 bg-slate-50 rounded-2xl">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block">Inicial</span>
-                  <span className="text-sm font-black text-slate-700">{metas.peso_inicial || 0} kg</span>
-                </div>
-                <div className="p-3 bg-rose-50 rounded-2xl border border-rose-100">
-                  <span className="text-[10px] font-bold text-rose-500 uppercase block">Atual</span>
-                  <span className="text-sm font-black text-rose-700">{metas.peso_atual || 0} kg</span>
-                </div>
-                <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-100">
-                  <span className="text-[10px] font-bold text-emerald-600 uppercase block">Meta</span>
-                  <span className="text-sm font-black text-emerald-700">{metas.peso_meta || 0} kg</span>
-                </div>
-              </div>
-              {pesoPerdido && (
-                <p className="text-xs text-center font-semibold text-slate-600 pt-1">
-                  Progresso: <span className="text-emerald-600 font-bold">
-                    {pesoPerdido > 0 ? `-${pesoPerdido} kg eliminados` : 'Iniciando'}
-                  </span>
-                </p>
-              )}
+              <button 
+                onClick={() => setIsGoalsOpen(true)}
+                className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 transition-colors"
+                title="Configurar Metas"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
             </div>
-          )}
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="p-3 bg-slate-50 rounded-2xl">
+                <span className="text-[10px] font-bold text-slate-400 uppercase block">Inicial</span>
+                <span className="text-sm font-black text-slate-700">{metas?.peso_inicial || 0} kg</span>
+              </div>
+              <div className="p-3 bg-rose-50 rounded-2xl border border-rose-100">
+                <span className="text-[10px] font-bold text-rose-500 uppercase block">Atual</span>
+                <span className="text-sm font-black text-rose-700">{metas?.peso_atual || 0} kg</span>
+              </div>
+              <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-100">
+                <span className="text-[10px] font-bold text-emerald-600 uppercase block">Meta</span>
+                <span className="text-sm font-black text-emerald-700">{metas?.peso_meta || 0} kg</span>
+              </div>
+            </div>
+            {pesoPerdido && (
+              <p className="text-xs text-center font-semibold text-slate-600 pt-1">
+                Progresso: <span className="text-emerald-600 font-bold">
+                  {pesoPerdido > 0 ? `-${pesoPerdido} kg eliminados` : 'Iniciando'}
+                </span>
+              </p>
+            )}
+          </div>
 
           {/* Grafico */}
-          <WeightChart logs={weightLogs} />
+          <WeightChart logs={logs} />
 
           {/* Insights com IA */}
           <div className="bg-gradient-to-br from-slate-900 to-indigo-950 p-5 rounded-3xl text-white shadow-lg space-y-3">
@@ -162,8 +179,65 @@ export default function HistoryDashboardModal({ isOpen, onClose, weightLogs }) {
               </p>
             )}
           </div>
+
+          {/* Timeline de Registros */}
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-sky-500" />
+              Histórico de Registros
+            </span>
+            
+            {logs && logs.length > 0 ? (
+              <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
+                {/* Listando do mais recente para o mais antigo */}
+                {[...logs].reverse().map((log, index) => {
+                  const dataObj = log.created_at ? new Date(log.created_at) : new Date(log.data + 'T12:00:00Z');
+                  const isFirst = index === 0;
+                  return (
+                    <div key={log.id || index} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                      {/* Timeline Dot */}
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-slate-100 text-slate-500 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10">
+                        {isFirst ? <Activity className="w-4 h-4 text-emerald-500" /> : <Scale className="w-4 h-4 text-slate-400" />}
+                      </div>
+                      
+                      {/* Content Box */}
+                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl bg-slate-50 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:bg-white hover:border-slate-200">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {dataObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} 
+                            {log.created_at && ` às ${dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`}
+                          </span>
+                          <span className={`text-sm font-black ${isFirst ? 'text-rose-600' : 'text-slate-600'}`}>
+                            {log.peso} kg
+                          </span>
+                        </div>
+                        {log.cintura && (
+                          <div className="text-[11px] text-slate-500 mt-1">Cintura: {log.cintura} cm</div>
+                        )}
+                        {log.nota && (
+                          <div className="mt-2 p-2 bg-white rounded-xl text-xs text-slate-600 italic border border-slate-100">
+                            "{log.nota}"
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="text-center p-6 bg-slate-50 rounded-2xl">
+                <p className="text-xs text-slate-400 font-medium">Nenhum peso registrado ainda. Registre para ver sua evolução.</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+      <GoalsModal 
+        isOpen={isGoalsOpen} 
+        onClose={() => setIsGoalsOpen(false)} 
+        onMetasUpdated={fetchDadosDashboard}
+      />
     </div>
   )
 }
