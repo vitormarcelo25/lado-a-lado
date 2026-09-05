@@ -202,7 +202,8 @@ export function useNotifications() {
     const hojeStr = agora.toISOString().slice(0, 10)
 
     for (const notif of notificacoes) {
-      const horarioNotif = notif.horario?.slice(0, 5)
+      if (!notif.ativa) continue
+      const horarioNotif = notif.horario?.slice(0, 5) // HH:MM
       if (horarioNotif !== horarioAtual) continue
 
       const fireKey = `${notif.id}-${hojeStr}`
@@ -259,16 +260,23 @@ export function useNotifications() {
     // Realtime (instantaneo quando online)
     iniciarRealtimeGuardiao()
 
-    // Lembretes noturnos, de agua, e de Mounjaro
-    // Agora sao processados 100% pelo Backend via pg_cron + Edge Functions
-    // Nao precisamos mais de setTimeouts aqui que so disparam ao abrir o app.
+    // Sincronizacao hibrida: verifica a cada 30 segundos enquanto o site/app estiver aberto
+    const ticker = setInterval(async () => {
+      const notifs = await sincronizarNotificacoes()
+      dispararNotificacoesGuardiao(notifs)
+    }, 30000)
 
-  }, [agendado, iniciarRealtimeGuardiao, permissao, registrarTokenFCM, iniciarListenerFCM])
+    // Checagem imediata ao conectar
+    sincronizarNotificacoes().then(notifs => dispararNotificacoesGuardiao(notifs))
+
+    return () => clearInterval(ticker)
+  }, [agendado, iniciarRealtimeGuardiao, permissao, registrarTokenFCM, iniciarListenerFCM, sincronizarNotificacoes, dispararNotificacoesGuardiao])
 
   return {
     suportado,
     permissao,
     solicitarPermissao,
     agendarVerificacoes,
+    mostrarNotificacao,
   }
 }

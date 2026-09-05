@@ -1,6 +1,12 @@
-import { X, Clock, Syringe, Wind, MessageCircleHeart, Heart } from 'lucide-react'
+import { X, Clock, Syringe, Wind, MessageCircleHeart, Heart, CalendarDays } from 'lucide-react'
 
 const PASSOS = [
+  {
+    icon: CalendarDays,
+    titulo: 'Agenda & Alarmes',
+    desc: 'Agende atividades com dia e horário exatos. O celular apita e vibra como um alarme no momento certo.',
+    cor: 'bg-rose-50 text-rose-600',
+  },
   {
     icon: Clock,
     titulo: 'Rotina da Noite (1 minuto)',

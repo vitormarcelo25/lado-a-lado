@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import {
   Droplets, Sparkles, Shield, HelpCircle, Bell,
   MessageCircleHeart, CheckCircle2, Target, LineChart,
-  Plus, Minus, Smile, Meh, Frown, PartyPopper
+  Plus, Minus, Smile, Meh, Frown, PartyPopper, CalendarDays
 } from 'lucide-react'
 import { useCheckins } from '../hooks/useCheckins'
 import { useStreak } from '../hooks/useStreak'
 import { useQuotes } from '../hooks/useQuotes'
 import { useWeightLogs } from '../hooks/useWeightLogs'
 import { useNotifications } from '../hooks/useNotifications'
+import { useAgenda } from '../hooks/useAgenda'
 import QuoteCard from '../components/QuoteCard'
 import StreakCounter from '../components/StreakCounter'
 import WeightModal from '../components/WeightModal'
@@ -22,6 +23,11 @@ import ProteinFiberChecklist from '../components/ProteinFiberChecklist'
 import NonScaleVictories from '../components/NonScaleVictories'
 import DailyMission from '../components/DailyMission'
 import HistoryDashboardModal from '../components/HistoryDashboardModal'
+import AgendaModal from '../components/AgendaModal'
+import TodayAgendaCard from '../components/TodayAgendaCard'
+import AlarmOverlay from '../components/AlarmOverlay'
+import NotificationsModal from '../components/NotificationsModal'
+import NotificationToastCard from '../components/NotificationToastCard'
 
 const META_COPAS = 10
 
@@ -37,12 +43,26 @@ export default function UserView({ onGuardiao }) {
   const { streak } = useStreak()
   const { quote, isAiGenerated } = useQuotes({ streak, humor: checkin?.humor })
   const { logs, latest, addLog } = useWeightLogs()
-  const { suportado, permissao, solicitarPermissao, agendarVerificacoes } = useNotifications()
+  const { suportado, permissao, solicitarPermissao, agendarVerificacoes, mostrarNotificacao } = useNotifications()
+  const {
+    itens: agendaItens,
+    alarmeAtivo,
+    cardNotificacao,
+    adicionarItem: adicionarItemAgenda,
+    removerItem: removerItemAgenda,
+    alternarConcluido: alternarConcluidoAgenda,
+    pararAlarme,
+    concluirAlarme,
+    adiarAlarme,
+    fecharCardNotificacao
+  } = useAgenda()
 
   const [weightOpen, setWeightOpen] = useState(false)
   const [sosOpen, setSosOpen] = useState(false)
   const [guiaAberto, setGuiaAberto] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [agendaOpen, setAgendaOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
 
   useEffect(() => {
     if (permissao === 'granted') {
@@ -86,13 +106,30 @@ export default function UserView({ onGuardiao }) {
         </div>
 
         <div className="flex items-center gap-2">
-          {suportado && permissao !== 'granted' && (
+          <button
+            onClick={() => setAgendaOpen(true)}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors relative"
+            title="Agenda & Lembretes com Alarme"
+          >
+            <CalendarDays className="w-4 h-4" />
+            {agendaItens.filter(i => i.data === new Date().toISOString().slice(0, 10) && !i.concluido).length > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-rose-500 text-white rounded-full text-[9px] font-black flex items-center justify-center border border-white">
+                {agendaItens.filter(i => i.data === new Date().toISOString().slice(0, 10) && !i.concluido).length}
+              </span>
+            )}
+          </button>
+          {suportado && (
             <button
-              onClick={solicitarPermissao}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-amber-500 hover:bg-amber-50 transition-colors"
-              title="Ativar lembretes"
+              onClick={() => setNotificationsOpen(true)}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors relative ${
+                permissao === 'granted' ? 'text-violet-600 hover:bg-violet-50' : 'text-amber-500 hover:bg-amber-50 animate-pulse'
+              }`}
+              title="Notificações e Lembretes Marcados"
             >
               <Bell className="w-4 h-4" />
+              {agendaItens.filter(i => i.data === new Date().toISOString().slice(0, 10) && !i.concluido).length > 0 && (
+                <span className="absolute 1 top-0 right-0 w-2 h-2 bg-rose-500 rounded-full" />
+              )}
             </button>
           )}
           <button
@@ -130,6 +167,12 @@ export default function UserView({ onGuardiao }) {
       <StreakCounter streak={streak} />
 
       <MounjaroCard />
+
+      <TodayAgendaCard
+        itens={agendaItens}
+        onAbrirAgenda={() => setAgendaOpen(true)}
+        onAlternarConcluido={alternarConcluidoAgenda}
+      />
 
       <section className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
         <div className="flex justify-between items-end">
@@ -257,6 +300,43 @@ export default function UserView({ onGuardiao }) {
       <GuiaModal aberto={guiaAberto} fechar={() => setGuiaAberto(false)} />
 
       <HistoryDashboardModal isOpen={historyOpen} onClose={() => setHistoryOpen(false)} weightLogs={logs} />
+
+      <AgendaModal
+        isOpen={agendaOpen}
+        onClose={() => setAgendaOpen(false)}
+        itens={agendaItens}
+        onAdicionar={adicionarItemAgenda}
+        onRemover={removerItemAgenda}
+        onAlternarConcluido={alternarConcluidoAgenda}
+      />
+
+      <AlarmOverlay
+        alarme={alarmeAtivo}
+        onParar={pararAlarme}
+        onConcluir={concluirAlarme}
+        onAdiar={adiarAlarme}
+      />
+
+      <NotificationToastCard
+        alarme={cardNotificacao}
+        onConcluir={concluirAlarme}
+        onAdiar={adiarAlarme}
+        onDispensar={fecharCardNotificacao}
+      />
+
+      <NotificationsModal
+        isOpen={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+        itensAgenda={agendaItens}
+        permissao={permissao}
+        onSolicitarPermissao={solicitarPermissao}
+        onTestarNotificacao={() => mostrarNotificacao('Lado a Lado - Teste', {
+          body: 'O card de notificação no celular está ativo e funcionando perfeitamente!',
+          icon: '/icon-192.png'
+        })}
+        onAbrirAgenda={() => setAgendaOpen(true)}
+        onAlternarConcluido={alternarConcluidoAgenda}
+      />
     </div>
   )
 }
